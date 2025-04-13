@@ -1,8 +1,6 @@
 import os
-import time
 from pptx import Presentation
 from pptx.util import Inches
-from pydub import AudioSegment
 
 ffmpeg_path = "ffmpeg/"
 os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
