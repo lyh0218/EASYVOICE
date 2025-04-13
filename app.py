@@ -2,8 +2,6 @@ import os.path
 import time
 ffmpeg_path = "data/ffmpeg/"
 os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
-poppler_path = "data/poppler/Library/bin/"
-os.environ["PATH"] = poppler_path + os.pathsep + os.environ["PATH"]
 from f5_tts.api import F5TTS
 import json
 import shutil
