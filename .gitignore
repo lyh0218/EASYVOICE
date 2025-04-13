@@ -1,29 +1,38 @@
 speaker/speaker_voice/*
 !speaker/speaker_voice/
+!speaker/speaker_voice/.gitkeep
 
 speaker/speaker_config/*
 !speaker/speaker_config/
+!speaker/speaker_config/.gitkeep
 
 data/huggingface_models/*
 !data/huggingface_models/
+!data/huggingface_models/.gitkeep
 
 data/whisper_models/*
 !data/whisper_models/
+!data/whisper_models/.gitkeep
 
 data/temp
 !data/temp/
+!data/temp/.gitkeep
 
 data/tts_models/*
 !data/tts_models/
+!data/tts_models/.gitkeep
 
 output/output_voice/*
 !output/output_voice/
+!output/output_voice/.gitkeep
 
 output/output_pptx/*
 !output/output_pptx/
+!output/output_pptx/.gitkeep
 
 data/ffmpeg/*
 !data/ffmpeg/
+!data/ffmpeg/.gitkeep
 
 .venv
 
