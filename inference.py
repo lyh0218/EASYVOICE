@@ -10,12 +10,12 @@ def wavs_inference(tts_model,config):
     fix_duration_value = float(config["fix_duration"])
     if fix_duration_value == 0:
         fix_duration_value = None
-    new_ref_text = config["ref_text"]
-    new_ref_text = f"。。{new_ref_text}。。"
+    new_gen_text = config["gen_text"]
+    gen_text = f"。。{new_gen_text}。。"
     wav, sr, spec = tts_model.infer(
         ref_file = config["ref_file"],
-        ref_text = new_ref_text,
-        gen_text = config["gen_text"],
+        ref_text = config["ref_text"],
+        gen_text = gen_text,
         file_wave = config["file_wave"],
         show_info = print,
         progress = None,
