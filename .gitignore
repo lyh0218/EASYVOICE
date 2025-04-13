@@ -14,7 +14,7 @@ data/whisper_models/*
 !data/whisper_models/
 !data/whisper_models/.gitkeep
 
-data/temp/
+data/temp/*
 !data/temp/
 !data/temp/.gitkeep
 
