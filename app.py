@@ -12,6 +12,7 @@ import whisper
 from opencc import OpenCC
 import gradio as gr
 import inference
+import processing
 
 cc_model = OpenCC('t2s')
 
@@ -62,14 +63,24 @@ def get_voice_path():
     file_paths = []
     for root, dirs, files in os.walk("output/output_voice"):
         for file in files:
-            file_paths.append(f"{root}/{file}")
+            if not file.endswith('.gitkeep'):
+                file_paths.append(f"{root}/{file}")
     return file_paths
 
 def get_pptx_path():
     file_paths = []
     for root, dirs, files in os.walk("output/output_pptx"):
         for file in files:
-            file_paths.append(f"{root}/{file}")
+            if not file.endswith('.gitkeep'):
+                file_paths.append(f"{root}/{file}")
+    return file_paths
+
+def get_view_path():
+    file_paths = []
+    for root, dirs, files in os.walk("output/output_view"):
+        for file in files:
+            if not file.endswith('.gitkeep'):
+                file_paths.append(f"{root}/{file}")
     return file_paths
 
 def get_time():
@@ -77,6 +88,7 @@ def get_time():
         local_time = time.localtime(timestamp)
         time_str = time.strftime("%Y-%m-%d_%H-%M-%S",local_time) + f".{int((timestamp - int(timestamp)) * 100):02d}"
         return time_str
+
 
 def main():
 
@@ -411,7 +423,6 @@ def main():
                                 temp_json[f"shape_{index}"] = "NOT"
                                 gr.Info("已移除音频")
                                 return None
-
                             ppt_slide = gr.Slider()
                             ppt_text_load = gr.Textbox(label = "PPT文本")
                             ppt_new_voice = gr.Audio(label = "生成音频",type="filepath",interactive= False)
@@ -428,7 +439,155 @@ def main():
                         ppt_init.click(fn = ppt_init_btn,inputs = ppt_input,outputs = [ppt_init_page,ppt_edit_page,ppt_slide])
             ppt_speaker_load.click(fn = ppt_speaker_load_btn,inputs = [],outputs = ppt_speaker_choose)
             ppt_speaker_choose.change(fn = get_speaker_config_value,inputs = ppt_speaker_choose,outputs = [ppt_speaker_wav,ppt_speaker_text])
-
+        with gr.Tab(label = "配音替换"):
+            with gr.Row(equal_height = True):
+                def view_speaker_load_btn():
+                    return gr.Dropdown(choices=get_speaker_config_json())
+                view_speaker_choose = gr.Dropdown(label = "选择人声",choices = get_speaker_config_json(),allow_custom_value = False,scale = 11)
+                view_speaker_load = gr.Button("加载",variant = "primary")
+                view_speaker_load.click(fn = view_speaker_load_btn,inputs = [],outputs = view_speaker_choose)
+            with gr.Row(equal_height = True):
+                with gr.Column(scale = 3):
+                    view_name = gr.Textbox(label="保存名称", interactive=True, info="默认为当前时间")
+                    view_target_rms = gr.Number(label="目标音量", interactive=True,info="请输入0~1之间的浮点数,默认为0.1", value=0.1)
+                    view_speed = gr.Number(label="语速", interactive=True, info="默认为1,高于1为加速低于1为减速",value=1)
+                    view_cfg_strength = gr.Number(label="模仿强度", interactive=True,info="默认为6,控制语音合成时的风格或表现力强度", value=6)
+                    view_nfe_step = gr.Number(label="每步的采样数", interactive=True,info="默认为16,越高越接近原音频,但生成速度会变慢", value=16)
+                    view_sway_sampling_coef = gr.Number(label="采样系数", interactive=True,info="默认为-1,制音频合成中的细节", value=-1)
+                    view_cross_fade_duration = gr.Number(label="淡入淡出时间", interactive=True,info="默认为0.1,避免音频切换时产生突兀感", value=0.1)
+                    view_seed = gr.Number(label="种子", interactive=True,info="控制生成语音的随机性,确保每次合成结果一致", value=None)
+                    view_fix_duration = gr.Number(label="固定时长", interactive=True, info="0为不固定时长", value=0)
+                    view_remove_silence = gr.Checkbox(label="去除静音", interactive=True, info="默认为去除静音",value=True)
+                    view_caption = gr.Checkbox(label = "加入字幕",interactive=True, info="默认为加入字幕",value=True)
+                with gr.Column(scale = 7):
+                    view_config = {}
+                    text_time_config = {}
+                    def view_input_btn(input_view_path,ref_file, ref_text, target_rms, speed, cfg_strength,nfe_step, sway_sampling_coef, cross_fade_duration, fix_duration, seed,remove_silence):
+                        gr.Info("正在加载视频请等待")
+                        if os.path.exists("data/temp/view_temp"):
+                            shutil.rmtree("data/temp/view_temp")
+                        os.makedirs("data/temp/view_temp")
+                        if target_rms == 0:
+                            target_rms = 0.1
+                        if speed == 0:
+                            speed = 1
+                        if cfg_strength == 0:
+                            cfg_strength = 6
+                        if nfe_step == 0:
+                            nfe_step = 16
+                        if sway_sampling_coef == 0:
+                            sway_sampling_coef = -1
+                        if cross_fade_duration == 0:
+                            cross_fade_duration = 0.1
+                        input_view_config = {
+                            "ref_file": ref_file,
+                            "ref_text": ref_text,
+                            "target_rms": target_rms,
+                            "speed": speed,
+                            "cfg_strength": cfg_strength,
+                            "nfe_step": nfe_step,
+                            "sway_sampling_coef": sway_sampling_coef,
+                            "cross_fade_duration": cross_fade_duration,
+                            "fix_duration": fix_duration,
+                            "seed": seed,
+                            "remove_silence": remove_silence
+                        }
+                        if not os.path.exists("data/temp/view_temp"):
+                            os.makedirs("data/temp/view_temp")
+                        if not os.path.exists("data/temp/view_temp/clips"):
+                            os.makedirs("data/temp/view_temp/clips")
+                        if not os.path.exists("data/temp/view_temp/new_clips"):
+                            os.makedirs("data/temp/view_temp/new_clips")
+                        if not os.path.exists("data/temp/view_temp/separate"):
+                            os.makedirs("data/temp/view_temp/separate")
+                        vocal_path,bass_path,drums_path,other_path = processing.separate_audio(input_view_path,"data/temp/view_temp/separate")
+                        processing.combine_accompaniments(bass_path,drums_path,other_path,"data/temp/view_temp/accompaniment.wav")
+                        processing.split_audio_on_silence(vocal_path,"data/temp/view_temp/clips")
+                        new_whisper_device = "cuda" if torch.cuda.is_available() else "cpu"
+                        new_whisper_model = whisper.load_model(
+                            "data/whisper_models/base.pt",
+                            device=new_whisper_device,
+                            download_root=os.path.dirname("data/whisper_models")
+                        )
+                        new_text_time_config = processing.recognize_audio_files(new_whisper_model)
+                        view_config.update(input_view_config)
+                        text_time_config.update(new_text_time_config)
+                        processing.traverse_audio_dict(text_time_config)
+                        gr.Info("视频加载完成 请加载进度条")
+                        return gr.Column(visible = False),gr.Column(visible = True)
+                    def get_view_slider_value():
+                        return len(text_time_config)
+                    def view_slider_change(index):
+                        return text_time_config[f"output_clip_{index}.wav"].text,f"data/temp/view_temp/clips/output_clip_{index}.wav"
+                    def view_create_btn(caption,intput_view_path,file_wave):
+                        if file_wave is None or file_wave.strip() == "":
+                            timestamp = time.time()
+                            local_time = time.localtime(timestamp)
+                            file_wave = time.strftime("%Y-%m-%d_%H-%M-%S",local_time) + f".{int((timestamp - int(timestamp)) * 100):02d}"
+                        output_path = f"output/output_view/{file_wave}.mp4"
+                        processing.mix_audio_with_accompaniment(text_time_config)
+                        if caption:
+                            view_path = processing.make_view(intput_view_path)
+                            processing.add_subtitles_to_video(text_time_config,view_path,output_path)
+                        else:
+                            processing.make_view_save(intput_view_path,output_path)
+                        return gr.Column(visible = True),gr.Column(visible = False),gr.Dropdown(choices = get_view_path())
+                    def view_process_btn(index,gen_text):
+                        new_view_config = view_config.copy()
+                        new_view_config["gen_text"] = gen_text
+                        file_wave = f"data/temp/view_temp/new_clips/new_output_clip_{index}.wav"
+                        new_view_config["file_wave"] = file_wave
+                        text_time_config[f"output_clip_{index}.wav"].wav_path = file_wave
+                        text_time_config[f"output_clip_{index}.wav"].text = gen_text
+                        new_clip_path = inference.wavs_inference(tts_model,new_view_config)
+                        return new_clip_path
+                    def view_delete_btn(index):
+                        text_time_config[f"output_clip_{index}.wav"].wav_path = "NOT"
+                        gr.Info(f"片段{index}的人声删除完成")
+                    def view_cancel_btn():
+                        return gr.Column(visible = True),gr.Column(visible = False)
+                    view_speaker_wav = gr.Audio(label = "参考音频",type="filepath",interactive= False)
+                    view_speaker_text = gr.Textbox(label = "参考文本",interactive= False)
+                    view = gr.Video(label = " 上传视频")
+                    with gr.Column(visible = True) as view_input_column:
+                        view_input = gr.Button("开始制作",variant = "primary")
+                        with gr.Row(equal_height = True):
+                            def load_view(view_path):
+                                return view_path
+                            def view_load_btn():
+                                return gr.Dropdown(choices = get_view_path())
+                            def view_output_delete_btn(path):
+                                os.remove(path)
+                                return gr.Dropdown(choices = get_view_path())
+                            view_dropdown = gr.Dropdown(label = "选择视频",choices = get_view_path(),scale = 8)
+                            view_load = gr.Button("加载",variant = "primary",scale = 2)
+                            view_output_delete = gr.Button("删除",variant = "stop",scale = 2)
+                            view_output_delete.click(fn = view_output_delete_btn,inputs = view_dropdown,outputs = view_dropdown)
+                            view_load.click(fn = view_load_btn,inputs = [],outputs = view_dropdown)
+                        view_output = gr.Video(label = "生成视频",interactive= False)
+                        view_dropdown.change(fn = load_view,inputs = view_dropdown,outputs = view_output)
+                    with gr.Column(visible = False) as view_output_column:
+                        with gr.Row(equal_height = True):
+                            def view_clips_load_btn():
+                                return gr.Slider(label="进度条",minimum=1,maximum=get_view_slider_value(),step=1)
+                            view_slider = gr.Slider(label="进度条",minimum=1,maximum=get_view_slider_value(),step=1,scale = 8)
+                            view_clips_load = gr.Button("加载进度条",variant = "primary",scale = 2)
+                            view_clips_load.click(fn = view_clips_load_btn,inputs = [],outputs = view_slider)
+                        view_wav_input = gr.Audio(label = "视频音频",type = "filepath",interactive= False)
+                        view_wav_output = gr.Audio(label = "片段音频",interactive= False)
+                        view_text = gr.Textbox(label = "音频文本")
+                        with gr.Row():
+                            view_create = gr.Button("开始替换",variant = "primary")
+                            view_process = gr.Button("生成配音")
+                            view_delete = gr.Button("删除配音")
+                            view_cancel = gr.Button("取消",variant = "stop")
+                    view_slider.change(fn = view_slider_change, inputs = view_slider,outputs = [view_text,view_wav_input])
+                    view_input.click(fn = view_input_btn,inputs = [view,view_speaker_wav,view_speaker_text,view_target_rms,view_speed,view_cfg_strength,view_nfe_step,view_sway_sampling_coef,view_cross_fade_duration,view_fix_duration,view_seed,view_remove_silence],outputs = [view_input_column,view_output_column])
+                    view_create.click(fn = view_create_btn,inputs = [view_caption,view,view_name],outputs = [view_input_column,view_output_column,view_dropdown])
+                    view_process.click(fn = view_process_btn,inputs = [view_slider,view_text],outputs = view_wav_output)
+                    view_delete.click(fn = view_delete_btn,inputs = view_slider,outputs = None)
+                    view_cancel.click(fn = view_cancel_btn,inputs = [],outputs = [view_input_column,view_output_column])
+                view_speaker_choose.change(fn = get_speaker_config_value,inputs = view_speaker_choose,outputs = [view_speaker_wav,view_speaker_text])
     main_page.launch()
 
 if __name__ == "__main__":

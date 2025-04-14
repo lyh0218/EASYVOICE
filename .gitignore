@@ -30,6 +30,10 @@ output/output_pptx/*
 !output/output_pptx/
 !output/output_pptx/.gitkeep
 
+output/output_view/*
+!output/output_view/
+!output/output_view/.gitkeep
+
 data/ffmpeg/*
 !data/ffmpeg/
 !data/ffmpeg/.gitkeep
