@@ -1,14 +1,14 @@
 import logging
 import os
-import tempfile
 from typing import Dict
-
 ffmpeg_path = "data/ffmpeg/"
 os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import subprocess
 import sys
+from opencc import OpenCC
+cc_model = OpenCC('t2s')
 
 class TextTime:
     def __init__(self, text, time):
@@ -100,6 +100,7 @@ def split_audio_on_silence(vocal_output_path, output_folder):
 def get_wav_text(model,audio_file_path):
     if os.path.exists(audio_file_path):
         result = model.transcribe(audio_file_path, language="zh", temperature=0.2, beam_size=5)["text"].strip()
+        cc_model.convert(result)
     else:
         result = None
     return result
