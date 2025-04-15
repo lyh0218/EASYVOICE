@@ -94,6 +94,7 @@ def main():
 
     shutil.rmtree("data/temp")
     os.makedirs("data/temp")
+    os.makedirs("data/temp/.gitkeep")
     tts_model = load_f5tts_model("data/tts_models/pro_v2.0.pt")
     whisper_model = load_whisper_model("data/whisper_models/medium.pt")
 
