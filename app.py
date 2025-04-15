@@ -439,7 +439,7 @@ def main():
                         ppt_init.click(fn = ppt_init_btn,inputs = ppt_input,outputs = [ppt_init_page,ppt_edit_page,ppt_slide])
             ppt_speaker_load.click(fn = ppt_speaker_load_btn,inputs = [],outputs = ppt_speaker_choose)
             ppt_speaker_choose.change(fn = get_speaker_config_value,inputs = ppt_speaker_choose,outputs = [ppt_speaker_wav,ppt_speaker_text])
-        with gr.Tab(label = "配音替换"):
+        with gr.Tab(label = "视频配音"):
             with gr.Row(equal_height = True):
                 def view_speaker_load_btn():
                     return gr.Dropdown(choices=get_speaker_config_json())
