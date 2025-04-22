@@ -1,27 +1,31 @@
 import logging
 import os
 from typing import Dict
-ffmpeg_path = "data/ffmpeg/"
-os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import subprocess
 import sys
 from opencc import OpenCC
-cc_model = OpenCC('t2s')
 
+'''
+    多功能音频/视频处理工具
+'''
+
+
+# 文本时间类
 class TextTime:
     def __init__(self, text, time):
         self.text = text
         self.time = time
         self.wav_path = "NOT"
 
+# mp4 -> wav
 def mp4_to_wav_pydub(mp4_path, wav_path):
     audio = AudioSegment.from_file(mp4_path, format="mp4")
-    audio = audio.set_frame_rate(22050).set_channels(1)
+    audio = audio.set_frame_rate(22050).set_channels(1) #采样率 单声道
     audio.export(wav_path, format="wav", parameters=["-acodec", "pcm_s16le"])
     return wav_path
-
+# 人声分离
 def separate_audio(input_audio_file, output_dir):
     input_audio_file = mp4_to_wav_pydub(input_audio_file,"data/temp/view_temp/input.wav")
     if os.name == "nt":
@@ -98,6 +102,7 @@ def split_audio_on_silence(vocal_output_path, output_folder):
         logging.error(f"音频分段保存时出错: {e}")
 
 def get_wav_text(model,audio_file_path):
+    cc_model = OpenCC('t2s')
     if os.path.exists(audio_file_path):
         result = model.transcribe(audio_file_path, language="zh", temperature=0.2, beam_size=5)["text"].strip()
         cc_model.convert(result)

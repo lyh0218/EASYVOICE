@@ -1,9 +1,10 @@
-import os
 from pptx import Presentation
 from pptx.util import Inches
 
-ffmpeg_path = "ffmpeg/"
-os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
+''' 
+    PPT语音合成工具 
+'''
+
 
 def wavs_inference(tts_model,config):
     print(config["target_rms"] is float)
@@ -34,7 +35,7 @@ def wavs_inference(tts_model,config):
 
 def ppt_fast_inference(tts_model,config,input_path,output_path):
     prs = Presentation(input_path)
-    config["file_wave"] = "data/temp/ppt_voice_temp.wav"
+    config["file_wave"] = " data/temp/ppt_voice_temp.wav"
     for slide in prs.slides:
         for shape in slide.shapes:
             if shape.has_text_frame:
